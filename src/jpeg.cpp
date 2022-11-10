@@ -30,11 +30,23 @@ int main() {
 	};
 
 
-	double ** img_out = new double*[h];
-	for(unsigned i = 0; i<h; i++) img_out[i] = new double[w];
+	double ** img_dct = new double*[h];
+	int ** img_idct = new int*[h];
+	int ** img_quant = new int*[h];
+	double ** img_dequant = new double*[h];
+	//double ** img_reverse = new double*[h];
+	for(unsigned i = 0; i<h; i++) {
+		img_dct[i] = new double[w];
+		img_idct[i] = new int[w];
+		img_quant[i] = new int[w];
+		img_dequant[i] = new double[w];
+	}
 
 	DCTCompression * dct = new DCTCompression(w,h,50);
 
-	dct->DCT_Block(img_out, block);
+	dct->DCT_Block(img_dct, block);
+	dct->IDCT_Block(img_dct , img_idct);
+	dct->quantification(img_dct, img_quant);
+	dct->dequantification(img_quant, img_dequant);
 	return 0;
 }
