@@ -34,6 +34,7 @@ int main() {
 	int ** img_idct = new int*[h];
 	int ** img_quant = new int*[h];
 	double ** img_dequant = new double*[h];
+	int * frame = new int[15];
 	//double ** img_reverse = new double*[h];
 	for(unsigned i = 0; i<h; i++) {
 		img_dct[i] = new double[w];
@@ -49,8 +50,8 @@ int main() {
 	dct->quantification(img_dct, img_quant);
 	dct->dequantification(img_quant, img_dequant);
 	//dct->IDCT_Block(img_quant_idct, img_quant);
-	dct->EQM(img_quant);
+	//dct->EQM(img_quant);
 	//cout<<"\n EQM = "<<dct->EQM(img_quant)<<endl;
-
+	dct->RLE_Block(img_quant, 0, frame);
 	return 0;
 }

@@ -145,7 +145,7 @@ public:
 		}
 
 		cout<<"\n DCT out : \n"<<endl;
-		show<double>(DCT_img);
+		show2D<double>(DCT_img);
 
 	}
 
@@ -180,7 +180,7 @@ public:
 		}
 
 		cout<<"\n Inverse DCT out : \n"<<endl;
-		show<int>(block);
+		show2D<int>(block);
 	}
 
 	/**
@@ -220,10 +220,10 @@ public:
 			}
 		}
 		cout<<"\n quantification matrix : \n"<<endl;
-		show<int>(Q_tab);
+		show2D<int>(Q_tab);
 
 		cout<<"\n quantification out : \n"<<endl;
-		show<int>(img_quant);
+		show2D<int>(img_quant);
 	}
 
 	/**
@@ -242,7 +242,7 @@ public:
 		}
 
 		cout<<"\n dequantification out : \n"<<endl;
-		show<double>(DCT_img);
+		show2D<double>(DCT_img);
 	}
 
 
@@ -278,16 +278,79 @@ public:
 
 	}
 
+	void RLE_Block(int** img_quant, int DC_prev, int * frame){
+		unsigned i, j,zeros,frame_idx;
+		i=1;
+		j = zeros = frame_idx = 0;
+		frame[frame_idx++]=img_quant[0][0];
+		bool sw = false;
+		for (unsigned n = 0 ; n<62; n++){
+			if (img_quant[j][i] == 0) zeros++;
+			else{
+				frame[frame_idx++]=zeros;
+				frame[frame_idx++]=img_quant[j][i];
+				zeros = 0;
+			}
+			printf("index [%d, %d], value %u  : %d, dir : %s \n", j,i,n+1,img_quant[j][i],sw ? "up" : "down");
+			if(n<34){
+				if (!sw){
+					if (i!=0)i -= 1;
+					else sw = !sw;
+					j += 1;
+				}
+				else{
+					if (j!=0)j -= 1;
+					else sw = !sw;
+					i += 1;
+				}
+			}
+			else{
+				if (!sw){
+					if (j!=7){
+						i -= 1;
+						j += 1;
+					}
+					else {
+						sw = !sw;
+						i += 1;
+					}
 
+				}
+				else{
+					if (i!=7){
+						j -= 1;
+						i += 1;
+					}
+					else {
+						sw = !sw;
+						j += 1;
+					}
+
+				}
+			}
+
+
+		}
+		show1D(frame,15);
+	}
+
+		void RLE(int*frame){
+
+		}
 
 	template <typename T>
-	void show(T** mat){
+	void show2D(T** mat){
 		for (unsigned i = 0; i < block_sz; i++){
 			for (unsigned j = 0; j < block_sz; j++){
 				cout<< setw(7) << setprecision(3) << mat[i][j] << setw(3)<< '|';
 			}
 			cout<<"\n";
 		}
+	}
+
+	void show1D(int* vect, unsigned len){
+		for(unsigned i = 0; i< len; i++) cout<<setw(4)<<vect[i]<<"|";
+		cout<<"\n";
 	}
 };
 
