@@ -48,5 +48,9 @@ int main() {
 	dct->IDCT_Block(img_dct , img_idct);
 	dct->quantification(img_dct, img_quant);
 	dct->dequantification(img_quant, img_dequant);
+	//dct->IDCT_Block(img_quant_idct, img_quant);
+	dct->EQM(img_quant);
+	//cout<<"\n EQM = "<<dct->EQM(img_quant)<<endl;
+
 	return 0;
 }

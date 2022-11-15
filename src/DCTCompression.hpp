@@ -23,7 +23,7 @@ using namespace std;
 class DCTCompression{
 	unsigned m_width;			/**< Image Width */
 	unsigned m_height;			/**< Image Height */
-	unsigned char **m_buffer;
+	int **m_buffer;
 	unsigned m_quality;		/**< JPEG Quality */
 	unsigned m_Q[8][8] = {
 			{16,11,10,16,24,40,51,61},
@@ -47,9 +47,9 @@ public:
 		m_width = width;
 		m_height = height;
 		m_quality = quality;
-		m_buffer = new unsigned char*[height];
+		m_buffer = new int*[height];
 		for (unsigned i = 0; i < height; i++){
-			m_buffer[i]= new unsigned char[width];
+			m_buffer[i]= new int[width];
 		}
 	}
 
@@ -117,6 +117,13 @@ public:
 			}
 			cout<<"\n";
 		}
+		//fill in buffer with original image for EQM
+		for (unsigned i = 0; i < block_sz; i++){
+			for (unsigned j = 0; j < block_sz; j++){
+				m_buffer[i][j] = block[i][j];
+			}
+		}
+
 		double cu, cv, p;
 		p=0;
 		for (unsigned u = 0; u < block_sz; u++){
@@ -160,7 +167,7 @@ public:
 
 					for (unsigned v = 0; v < block_sz; v++){
 						v == 0 ? cv=1/sqrt(2) : cv=1;
-
+						//cout<<DCT_img[u][v]<<endl;
 						p += (DCT_img[u][v])*cv*cu*
 								cos(((2*x+1)*M_PI*u)/16.)*
 								cos(((2*y+1)*M_PI*v)/16.);
@@ -175,6 +182,10 @@ public:
 		cout<<"\n Inverse DCT out : \n"<<endl;
 		show<int>(block);
 	}
+
+	/**
+	 * Retrieve JPEG quantification table
+	 */
 
 	int** get_quantification_table(){
 		int** Q_tab = new int*[block_sz];
@@ -194,7 +205,11 @@ public:
 		return Q_tab;
 	}
 
-
+	/**
+	 * JPEG quantification
+	 * @param DCT_img : Pointer to the output image
+	 * @param img_quant : Pointer to the quantified image
+	 */
 
 	void quantification (double **DCT_img, int** img_quant){
 		int** Q_tab = get_quantification_table();
@@ -211,18 +226,59 @@ public:
 		show<int>(img_quant);
 	}
 
+	/**
+	 * JPEG dequantification
+	 * @param img_quant : Pointer to the quantified image
+	 * @param DCT_img : Pointer to the output image
+	 */
+
 	void dequantification (int **img_quant, double** DCT_img){
-			int** Q_tab = get_quantification_table();
+		int** Q_tab = get_quantification_table();
 
-			for (unsigned i = 0; i < block_sz; i++){
-				for (unsigned j = 0; j < block_sz; j++){
-					DCT_img[i][j] = img_quant[i][j] * Q_tab[i][j];
-				}
+		for (unsigned i = 0; i < block_sz; i++){
+			for (unsigned j = 0; j < block_sz; j++){
+				DCT_img[i][j] = img_quant[i][j] * Q_tab[i][j];
 			}
-
-			cout<<"\n dequantification out : \n"<<endl;
-			show<double>(DCT_img);
 		}
+
+		cout<<"\n dequantification out : \n"<<endl;
+		show<double>(DCT_img);
+	}
+
+
+
+	double EQM(int ** block){
+		double EQM;
+
+		int ** img_quant_idct = new int*[block_sz];
+		for(unsigned i=0; i< block_sz; i++){
+			img_quant_idct[i] = new int[block_sz];
+		}
+
+		double ** d_block = new double*[block_sz];
+
+		for (unsigned i = 0; i < block_sz; i++){
+			d_block[i]= new double[block_sz];
+			for (unsigned j = 0; j < block_sz; j++){
+				d_block[i][j] = (double)block[i][j];
+			}
+		}
+
+		IDCT_Block(d_block, img_quant_idct);
+
+		for (unsigned i = 0; i < block_sz; i++){
+			for (unsigned j = 0; j < block_sz; j++){
+				EQM += pow(m_buffer[i][j]-img_quant_idct[i][j],2);
+			}
+		}
+		return EQM /= 64;
+	}
+
+	double compression_rate(int ** block){
+
+	}
+
+
 
 	template <typename T>
 	void show(T** mat){
