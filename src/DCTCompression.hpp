@@ -24,6 +24,7 @@ class DCTCompression{
 	unsigned m_width;			/**< Image Width */
 	unsigned m_height;			/**< Image Height */
 	int **m_buffer;
+	int **m_origin;
 	unsigned m_quality;		/**< JPEG Quality */
 	unsigned m_Q[8][8] = {
 			{16,11,10,16,24,40,51,61},
@@ -118,11 +119,11 @@ public:
 			cout<<"\n";
 		}
 		//fill in buffer with original image for EQM
-		for (unsigned i = 0; i < block_sz; i++){
-			for (unsigned j = 0; j < block_sz; j++){
-				m_buffer[i][j] = block[i][j];
-			}
-		}
+//		for (unsigned i = 0; i < block_sz; i++){
+//			for (unsigned j = 0; j < block_sz; j++){
+//				m_buffer[i][j] = block[i][j];
+//			}
+//		}
 
 		double cu, cv, p;
 		p=0;
@@ -246,38 +247,51 @@ public:
 	}
 
 
-
-	double EQM(int ** block){
+	/**
+	 * Mean squared deviation
+	 * Measures the average of the squares of the errors, (average loss of data)
+	 * @param block : Pointer to the quantified image to be compared with the original
+	 */
+	double EQM(int ** block, int original_block[][block_sz]){
 		double EQM;
 
-		int ** img_quant_idct = new int*[block_sz];
+		double ** block_dequant = new double*[block_sz];
+		int ** block_idct = new int*[block_sz];
 		for(unsigned i=0; i< block_sz; i++){
-			img_quant_idct[i] = new int[block_sz];
+			block_dequant[i] = new double[block_sz];
+			block_idct[i] = new int[block_sz];
 		}
 
-		double ** d_block = new double*[block_sz];
+		dequantification(block, block_dequant);
+		IDCT_Block(block_dequant, block_idct);
 
-		for (unsigned i = 0; i < block_sz; i++){
-			d_block[i]= new double[block_sz];
-			for (unsigned j = 0; j < block_sz; j++){
-				d_block[i][j] = (double)block[i][j];
-			}
-		}
-
-		IDCT_Block(d_block, img_quant_idct);
 
 		for (unsigned i = 0; i < block_sz; i++){
 			for (unsigned j = 0; j < block_sz; j++){
-				EQM += pow(m_buffer[i][j]-img_quant_idct[i][j],2);
+				EQM += pow(original_block[i][j]-block_idct[i][j],2);
 			}
 		}
+		cout<<EQM/64<<endl;
 		return EQM /= 64;
 	}
 
+	/**
+	 * Rate of compression between the quantified image and the original
+	 * @param block : Pointer to the quantified image
+	 */
 	double compression_rate(int ** block){
 
 	}
 
+	/**
+	 * Run length encoding of a 8x8 block from the image
+	 * Run through all the index except [0,0] in a diagonal zigzag pattern, each non-zero coefficient cn is then extracted with a number of zeros that precedes it nz_cn.
+	 * The information is included in an array [DC, nz_c1, c1, nz_c2,c2,...,nz_cn,cn]
+	 * DC represents the mean value of the previous block.
+	 * @param img_quant : Pointer to the quantified image
+	 * @param DC_prev : Mean value of the previous block
+	 * @param frame : Pointer to an array containing the encoded information
+	 */
 	void RLE_Block(int** img_quant, int DC_prev, int * frame){
 		unsigned i, j,zeros,frame_idx;
 		i=1;
@@ -291,7 +305,7 @@ public:
 				frame[frame_idx++]=img_quant[j][i];
 				zeros = 0;
 			}
-			printf("index [%d, %d], value %u  : %d, dir : %s \n", j,i,n+1,img_quant[j][i],sw ? "up" : "down");
+			//printf("index [%d, %d], value %u  : %d, dir : %s \n", j,i,n+1,img_quant[j][i],sw ? "up" : "down");
 			if(n<34){
 				if (!sw){
 					if (i!=0)i -= 1;
@@ -325,18 +339,40 @@ public:
 						sw = !sw;
 						j += 1;
 					}
-
 				}
 			}
-
-
 		}
 		show1D(frame,15);
 	}
 
-		void RLE(int*frame){
+	/**
+	 * Calls RLE_Block for each block of an image and concatenate their frames
+	 * @param frame : Pointer to  an array resulting of the concatenation of each block's frames
+	 */
+	void RLE(int*frame){
+		int ** block = new int*[block_sz];
+		int ** frames = new int*[(m_height/block_sz)*(m_width/block_sz)];
+		int * temp_frame;
+		int DC = 0;
+		for (unsigned j = 0; j < m_height; j+=block_sz){
+			for (unsigned i = 0; i < m_width; i+=block_sz){
+
+				for (unsigned y = j; y < j+block_sz; y++){
+					block[y] = new int[block_sz];
+					for (unsigned x = i; x < i+block_sz; x++){
+						block[y][x] = m_buffer[y][x];
+					}
+				}
+				RLE_Block(block, DC, temp_frame);
+				frames[j] = new int[sizeof(temp_frame)/sizeof(int)];
+				for (unsigned u = 0; u < sizeof(temp_frame)/sizeof(int); u++){
+					frames[j][i]= temp_frame[u];
+				}
+			}
 
 		}
+
+	}
 
 	template <typename T>
 	void show2D(T** mat){
