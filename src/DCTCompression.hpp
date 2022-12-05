@@ -21,11 +21,12 @@ using namespace std;
  */
 
 class DCTCompression{
+	static const unsigned MAX_FRAME_SIZE = 64;
+
 	unsigned m_width;			/**< Image Width */
 	unsigned m_height;			/**< Image Height */
-	int **m_buffer;
-	int **m_origin;
-	unsigned m_quality;		/**< JPEG Quality */
+	int **m_buffer;				/**< Image Buffer */
+	unsigned m_quality;			/**< JPEG Quality */
 	unsigned m_Q[8][8] = {
 			{16,11,10,16,24,40,51,61},
 			{12,12,14,19,26,58,60,55},
@@ -82,6 +83,12 @@ public:
 	void SetQuality(unsigned quality){
 		m_quality = quality;
 	}
+	/**
+	 * Buffer setter
+	 */
+	void SetBuffer(int ** image){
+		m_buffer = image;
+	}
 
 	/**
 	 * Width getter
@@ -102,6 +109,13 @@ public:
 	 */
 	unsigned GetQuality(){
 		return m_quality;
+	}
+
+	/**
+	 * Buffer getter
+	 */
+	int ** GetBuffer(){
+		return m_buffer;
 	}
 
 	/**
@@ -148,6 +162,31 @@ public:
 		cout<<"\n DCT out : \n"<<endl;
 		show2D<double>(DCT_img);
 
+	}
+
+	/*
+	 *
+	 */
+	void DCT_Block(double**DCT_img, int **block){
+		double cu, cv, p;
+		p=0;
+		for (unsigned u = 0; u < block_sz; u++){
+			u == 0 ? cu=1/sqrt(2) : cu=1;
+			for (unsigned v = 0; v < block_sz; v++){
+				v == 0 ? cv=1/sqrt(2) : cv=1;
+				for (unsigned x = 0; x < block_sz; x++){
+					for (unsigned y = 0; y < block_sz; y++){
+
+						p += (block[x][y]-128)*
+								cos((2*x+1)*M_PI*u/16.)*
+								cos((2*y+1)*M_PI*v/16.);
+
+					}
+				}
+				DCT_img[u][v]= cv*cu*p/4.;
+				p=0;
+			}
+		}
 	}
 
 	/**
@@ -252,17 +291,14 @@ public:
 	 * Measures the average of the squares of the errors, (average loss of data)
 	 * @param block : Pointer to the quantified image to be compared with the original
 	 */
-	double EQM(int ** block, int original_block[][block_sz]){
+	double EQM(double ** block_dequant, int original_block[][block_sz]){
 		double EQM;
 
-		double ** block_dequant = new double*[block_sz];
 		int ** block_idct = new int*[block_sz];
 		for(unsigned i=0; i< block_sz; i++){
-			block_dequant[i] = new double[block_sz];
 			block_idct[i] = new int[block_sz];
 		}
 
-		dequantification(block, block_dequant);
 		IDCT_Block(block_dequant, block_idct);
 
 
@@ -271,16 +307,58 @@ public:
 				EQM += pow(original_block[i][j]-block_idct[i][j],2);
 			}
 		}
-		cout<<EQM/64<<endl;
 		return EQM /= 64;
 	}
 
-	/**
-	 * Rate of compression between the quantified image and the original
-	 * @param block : Pointer to the quantified image
-	 */
-	double compression_rate(int ** block){
+//	unsigned distinct_values(int ** block){
+//		int * buffer = new int[64];
+//		unsigned counter = 0;
+//		for(unsigned i = 0; i < block_sz; i++){
+//			for(unsigned j = 0; j < block_sz; j++){
+//				if (j == 0) buffer[counter++] = block[i][j];
+//				else {
+//					for(unsigned k=0; k<= counter; k++){
+//						if(block[i][j] != buffer[k]){
+//							buffer[i*j+j]
+//						}
+//					}
+//				}
+//
+//			}
+//		}
+//	}
 
+	/*
+	 * Find non null elements in a 2D array of any type
+	 * @param mat : Matrix containing the elements
+	 * @param clen : Columns length.
+	 * @param llen : Lignes length.
+	 */
+	template <typename T>
+	unsigned non_null_elements(T** mat, unsigned clen = block_sz, unsigned llen = block_sz){
+		unsigned counter = 0;
+		for (unsigned i = 0; i < clen; i++){
+			for (unsigned j = 0; j < llen; j++){
+				if(mat[i][j] != 0)counter++;
+			}
+		}
+		return counter;
+	}
+
+	/**
+	 * Rate of compression between the dequantified image and the original
+	 * @param block : Pointer to the quantified block
+	 * @param original_block : Pointer to the original block
+	 */
+	double compression_rate(double ** block_dequant, int original_block[][block_sz]){
+		double elems_dequant, elems_orig = 0;
+		for(unsigned i = 0; i < block_sz; i++){
+			for(unsigned j = 0; j < block_sz; j++){
+				if (block_dequant[i][j] != 0) elems_dequant++;
+				if (original_block[i][j] != 0) elems_orig++;
+			}
+		}
+		return 1- elems_dequant/elems_orig;
 	}
 
 	/**
@@ -293,10 +371,11 @@ public:
 	 * @param frame : Pointer to an array containing the encoded information
 	 */
 	void RLE_Block(int** img_quant, int DC_prev, int * frame){
-		unsigned i, j,zeros,frame_idx;
+		unsigned i, j,zeros,frame_idx,frame_size;
 		i=1;
 		j = zeros = frame_idx = 0;
-		frame[frame_idx++]=img_quant[0][0];
+		frame_size = non_null_elements<int>(img_quant)*2 +1;
+		frame[frame_idx++]=img_quant[0][0]-DC_prev;
 		bool sw = false;
 		for (unsigned n = 0 ; n<62; n++){
 			if (img_quant[j][i] == 0) zeros++;
@@ -342,7 +421,8 @@ public:
 				}
 			}
 		}
-		show1D(frame,15);
+		cout<<"Test block frame : ";
+		show1D(frame,frame_size);
 	}
 
 	/**
@@ -351,29 +431,45 @@ public:
 	 */
 	void RLE(int*frame){
 		int ** block = new int*[block_sz];
-		int ** frames = new int*[(m_height/block_sz)*(m_width/block_sz)];
-		int * temp_frame;
+		double ** block_dct = new double*[block_sz];
+		int ** block_quant = new int*[block_sz];
+
+		unsigned n_blocks = (m_height/block_sz) * (m_width/block_sz);
+		int * temp_frame = new int[MAX_FRAME_SIZE];
 		int DC = 0;
 		for (unsigned j = 0; j < m_height; j+=block_sz){
+
 			for (unsigned i = 0; i < m_width; i+=block_sz){
 
 				for (unsigned y = j; y < j+block_sz; y++){
+
 					block[y] = new int[block_sz];
+					block_dct[y] = new double[block_sz];
+					block_quant[y] = new int[block_sz];
+
+
 					for (unsigned x = i; x < i+block_sz; x++){
 						block[y][x] = m_buffer[y][x];
 					}
 				}
-				RLE_Block(block, DC, temp_frame);
-				frames[j] = new int[sizeof(temp_frame)/sizeof(int)];
-				for (unsigned u = 0; u < sizeof(temp_frame)/sizeof(int); u++){
-					frames[j][i]= temp_frame[u];
+
+				DCT_Block(block_dct, block);
+				quantification(block_dct, block_quant);
+
+				RLE_Block(block_quant, DC, temp_frame);
+				frame = new int[n_blocks * MAX_FRAME_SIZE];
+				for( unsigned i = 0; i < n_blocks; i++ ){
+					for (unsigned j = 0; j < MAX_FRAME_SIZE; j++) frame[i*MAX_FRAME_SIZE+j]= temp_frame[j];
 				}
 			}
-
 		}
-
+		show1D(frame, n_blocks*MAX_FRAME_SIZE);
 	}
 
+	/*
+	 * Print a 2D array of any type
+	 * @param mat : 2D array to display
+	 */
 	template <typename T>
 	void show2D(T** mat){
 		for (unsigned i = 0; i < block_sz; i++){
@@ -384,6 +480,9 @@ public:
 		}
 	}
 
+	/*
+	 * Print a 1D array
+	 */
 	void show1D(int* vect, unsigned len){
 		for(unsigned i = 0; i< len; i++) cout<<setw(4)<<vect[i]<<"|";
 		cout<<"\n";
