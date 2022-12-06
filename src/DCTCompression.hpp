@@ -125,13 +125,13 @@ public:
 	 */
 	void DCT_Block(double**DCT_img, int block[][block_sz]){
 
-		cout<<"\n DCT in : \n"<<endl;
-		for (unsigned x = 0; x < block_sz; x++){
-			for (unsigned y = 0; y < block_sz; y++){
-				printf("  %-4d | ",block[x][y]);
-			}
-			cout<<"\n";
-		}
+//		cout<<"\n DCT in : \n"<<endl;
+//		for (unsigned x = 0; x < block_sz; x++){
+//			for (unsigned y = 0; y < block_sz; y++){
+//				printf("  %-4d | ",block[x][y]);
+//			}
+//			cout<<"\n";
+//		}
 		//fill in buffer with original image for EQM
 //		for (unsigned i = 0; i < block_sz; i++){
 //			for (unsigned j = 0; j < block_sz; j++){
@@ -159,8 +159,8 @@ public:
 			}
 		}
 
-		cout<<"\n DCT out : \n"<<endl;
-		show2D<double>(DCT_img);
+//		cout<<"\n DCT out : \n"<<endl;
+//		show2D<double>(DCT_img);
 
 	}
 
@@ -219,8 +219,8 @@ public:
 			}
 		}
 
-		cout<<"\n Inverse DCT out : \n"<<endl;
-		show2D<int>(block);
+//		cout<<"\n Inverse DCT out : \n"<<endl;
+//		show2D<int>(block);
 	}
 
 	/**
@@ -259,11 +259,11 @@ public:
 				img_quant[i][j] = round(DCT_img[i][j] / Q_tab[i][j]);
 			}
 		}
-		cout<<"\n quantification matrix : \n"<<endl;
-		show2D<int>(Q_tab);
-
-		cout<<"\n quantification out : \n"<<endl;
-		show2D<int>(img_quant);
+//		cout<<"\n quantification matrix : \n"<<endl;
+//		show2D<int>(Q_tab);
+//
+//		cout<<"\n quantification out : \n"<<endl;
+//		show2D<int>(img_quant);
 	}
 
 	/**
@@ -281,8 +281,8 @@ public:
 			}
 		}
 
-		cout<<"\n dequantification out : \n"<<endl;
-		show2D<double>(DCT_img);
+		//cout<<"\n dequantification out : \n"<<endl;
+		//show2D<double>(DCT_img);
 	}
 
 
@@ -378,7 +378,14 @@ public:
 		frame[frame_idx++]=img_quant[0][0]-DC_prev;
 		bool sw = false;
 		for (unsigned n = 0 ; n<62; n++){
-			if (img_quant[j][i] == 0) zeros++;
+			if (img_quant[j][i] == 0) {
+				zeros++;
+				//Should it work ?
+				if (n == 61){
+					frame[frame_idx++]=0;
+					frame[frame_idx++]=0;
+				}
+			}
 			else{
 				frame[frame_idx++]=zeros;
 				frame[frame_idx++]=img_quant[j][i];
@@ -407,7 +414,6 @@ public:
 						sw = !sw;
 						i += 1;
 					}
-
 				}
 				else{
 					if (i!=7){
@@ -421,7 +427,7 @@ public:
 				}
 			}
 		}
-		cout<<"Test block frame : ";
+
 		show1D(frame,frame_size);
 	}
 
@@ -434,36 +440,46 @@ public:
 		double ** block_dct = new double*[block_sz];
 		int ** block_quant = new int*[block_sz];
 
+		for(unsigned i = 0; i<block_sz; i++){
+			block[i] = new int[block_sz];
+			block_dct[i] = new double[block_sz];
+			block_quant[i] = new int[block_sz];
+		}
+
 		unsigned n_blocks = (m_height/block_sz) * (m_width/block_sz);
 		int * temp_frame = new int[MAX_FRAME_SIZE];
 		int DC = 0;
+
+		cout<<"RLE on "<<m_height<<", "<<m_width<<" image."<<endl;
+
+		// Loop over blocks
 		for (unsigned j = 0; j < m_height; j+=block_sz){
 
+
 			for (unsigned i = 0; i < m_width; i+=block_sz){
+				cout<<"Image coords : ("<<i <<", "<< j<<")"<<endl;
 
+				// Loop over block pixels
 				for (unsigned y = j; y < j+block_sz; y++){
-
-					block[y] = new int[block_sz];
-					block_dct[y] = new double[block_sz];
-					block_quant[y] = new int[block_sz];
 
 
 					for (unsigned x = i; x < i+block_sz; x++){
+						//cout<<"Block coords : ("<<x-i <<", "<< y-j<<")"<<endl;
 						block[y][x] = m_buffer[y][x];
 					}
 				}
 
 				DCT_Block(block_dct, block);
 				quantification(block_dct, block_quant);
-
+				show2D<int>(block_quant);
 				RLE_Block(block_quant, DC, temp_frame);
-				frame = new int[n_blocks * MAX_FRAME_SIZE];
-				for( unsigned i = 0; i < n_blocks; i++ ){
-					for (unsigned j = 0; j < MAX_FRAME_SIZE; j++) frame[i*MAX_FRAME_SIZE+j]= temp_frame[j];
-				}
+				DC = frame[0];
+//				for( unsigned i = 0; i < n_blocks; i++ ){
+//					for (unsigned j = 0; j < MAX_FRAME_SIZE; j++) frame[i*MAX_FRAME_SIZE+j]= temp_frame[j];
+//				}
 			}
 		}
-		show1D(frame, n_blocks*MAX_FRAME_SIZE);
+		//show1D(frame, n_blocks*MAX_FRAME_SIZE);
 	}
 
 	/*

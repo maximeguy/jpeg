@@ -78,17 +78,19 @@ int main() {
 	}
 
 	Compression * comp = new Compression("data/lenna.dat");
-	DCTCompression * dct = new DCTCompression(w,h,50);
-
+//	DCTCompression * dct = new DCTCompression(img_sz,img_sz,50);
+//
 //	dct->DCT_Block(img_dct, block);
 //	dct->IDCT_Block(img_dct , img_idct);
 //	dct->quantification(img_dct, img_quant);
 //	dct->dequantification(img_quant, img_dequant);
-//	//dct->IDCT_Block(img_quant_idct, img_quant);
-//	cout<<"\n EQM = "<<dct->EQM(img_dequant,block)<<endl;
-//	cout<<"\n Compression rate = "<<dct->compression_rate(img_dequant,block)<<endl;
-//	cout<<dct->non_null_elements<int>(img_quant)*2+1<<endl;
-//	int * block_frame = new int[(dct->non_null_elements<int>(img_quant)*2) +1];
+	//dct->IDCT_Block(img_quant_idct, img_quant);
+	//cout<<"\n EQM = "<<dct->EQM(img_dequant,block)<<endl;
+	//cout<<"\n Compression rate = "<<dct->compression_rate(img_dequant,block)<<endl;
+	//cout<<dct->non_null_elements<int>(img_quant)*2+1<<endl;
+	//int * block_frame = new int[(dct->non_null_elements<int>(img_quant)*2) +1];
+//	int * block_frame = new int[64];
+//	cout<<"Test block frame : ";
 //	dct->RLE_Block(img_quant, 0, block_frame);
 //	int n_blocks = (img_sz / block_sz)*2;
 //	int * frame = new int[n_blocks * block_sz * block_sz * 2 -1];
@@ -96,6 +98,6 @@ int main() {
 //	char huff_data[6] = {'a','b','c','d','e','f'};
 //	double huff_freq[6] = {5,3,7,1,10,2};
 //	Huffman * huff = new Huffman(huff_data, huff_freq, sizeof(huff_freq) / sizeof(huff_freq[0]));
-	//huff->show();
+//	huff->show();
 	return 0;
 }

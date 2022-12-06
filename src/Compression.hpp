@@ -16,6 +16,7 @@ using namespace std;
 class Compression{
 	const unsigned img_sz = 128;
 	int ** m_image = new int*[img_sz];
+	int * frame = new int[img_sz/8];
 	DCTCompression * dct = new DCTCompression(img_sz,img_sz,50);
 
 public:
@@ -44,6 +45,8 @@ public:
 			cout<<"Image buffered, closing '"<<filename<<"'."<<endl;
 			img_file.close();
 		}
+		dct->SetBuffer(m_image);
+		dct->RLE(frame);
 	}
 	~Compression(){
 
