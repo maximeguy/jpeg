@@ -15,8 +15,11 @@ using namespace std;
 
 class Compression{
 	const unsigned img_sz = 128;
+	const unsigned block_sz = 8;
+	const unsigned frame_sz = 64;
+	unsigned n_blocks = (img_sz/block_sz) * (img_sz/block_sz);
 	int ** m_image = new int*[img_sz];
-	int * frame = new int[img_sz/8];
+	int * frame = new int[n_blocks*frame_sz];
 	DCTCompression * dct = new DCTCompression(img_sz,img_sz,50);
 
 public:
