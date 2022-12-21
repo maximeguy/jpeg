@@ -2,7 +2,7 @@
  * DCTCompression.hpp
  *
  *  Created on: 3 nov. 2022
- *      Author: maxime
+ *      Author: Maxime GUY
  */
 
 #ifndef DCTCOMPRESSION_HPP_
@@ -19,31 +19,25 @@ using namespace std;
 /**
  * Implements DCT Compression algorithm
  */
-
 class DCTCompression {
-	static const unsigned MAX_FRAME_SIZE = 64;
-
+	const unsigned MAX_FRAME_SIZE = 64;
 	unsigned m_width; /**< Image Width */
 	unsigned m_height; /**< Image Height */
 	int **m_buffer; /**< Image Buffer */
 	int *temp_frame = new int[MAX_FRAME_SIZE];
 	unsigned m_quality; /**< JPEG Quality */
-	unsigned m_Q[8][8] = { { 16, 11, 10, 16, 24, 40, 51, 61 }, { 12, 12, 14, 19,
-			26, 58, 60, 55 }, { 14, 13, 16, 24, 40, 57, 69, 56 }, { 14, 17, 22,
-			29, 51, 87, 80, 62 }, { 18, 22, 37, 56, 68, 109, 103, 77 }, { 24,
-			35, 55, 64, 81, 104, 113, 92 },
-			{ 49, 64, 78, 87, 103, 121, 120, 101 }, { 72, 92, 95, 98, 112, 100,
-					103, 99 }, };
+	unsigned m_Q[8][8] = { { 16, 11, 10, 16, 24, 40, 51, 61 }, { 12, 12, 14, 19, 26, 58, 60, 55 }, { 14, 13, 16, 24, 40,
+			57, 69, 56 }, { 14, 17, 22, 29, 51, 87, 80, 62 }, { 18, 22, 37, 56, 68, 109, 103, 77 }, { 24, 35, 55, 64,
+			81, 104, 113, 92 }, { 49, 64, 78, 87, 103, 121, 120, 101 }, { 72, 92, 95, 98, 112, 100, 103, 99 }, };
 
 public:
 	static const unsigned block_sz = 8; /**< DCT Block size */
 
 	/**
-	 * Class constructor
+	 * DCTCompression class constructor
 	 * Assign m_width, m_height and m_quality variable and allocates m_buffer as a bidimensional array
 	 */
-	DCTCompression(const unsigned width, const unsigned height,
-			const unsigned quality = 50) {
+	DCTCompression(const unsigned width, const unsigned height, const unsigned quality = 50) {
 		m_width = width;
 		m_height = height;
 		m_quality = quality;
@@ -58,61 +52,67 @@ public:
 	 * Deallocate m_buffer
 	 */
 	~DCTCompression() {
-
+		for (unsigned i = 0; i < m_height; i++) {
+			delete m_buffer[i];
+		}
+		delete m_buffer;
 	}
 
 	/**
 	 * Width setter
+	 * @param width : Image width
 	 */
-	void SetWidth(unsigned width) {
+	void set_width(unsigned width) {
 		m_width = width;
 	}
 
 	/**
 	 * Height setter
+	 * @param height : Image height
 	 */
-	void SetHeight(unsigned height) {
+	void set_height(unsigned height) {
 		m_height = height;
 	}
 
 	/**
 	 * Quality setter
+	 * @param quality : Quality of DCT compression
 	 */
-	void SetQuality(unsigned quality) {
+	void set_quality(unsigned quality) {
 		m_quality = quality;
 	}
 	/**
 	 * Buffer setter
 	 */
-	void SetBuffer(int **image) {
+	void set_buffer(int **image) {
 		m_buffer = image;
 	}
 
 	/**
 	 * Width getter
 	 */
-	unsigned GetWidth() {
+	unsigned get_width() {
 		return m_width;
 	}
 
 	/**
 	 * Height getter
 	 */
-	unsigned GetHeight() {
+	unsigned get_height() {
 		return m_height;
 	}
 
 	/**
 	 * Quality getter
 	 */
-	unsigned GetQuality() {
+	unsigned get_quality() {
 		return m_quality;
 	}
 
 	/**
 	 * Buffer getter
 	 */
-	int** GetBuffer() {
+	int** get_buffer() {
 		return m_buffer;
 	}
 
@@ -146,8 +146,7 @@ public:
 				for (unsigned x = 0; x < block_sz; x++) {
 					for (unsigned y = 0; y < block_sz; y++) {
 
-						p += (block[x][y] - 128)
-								* cos((2 * x + 1) * M_PI * u / 16.)
+						p += (block[x][y] - 128) * cos((2 * x + 1) * M_PI * u / 16.)
 								* cos((2 * y + 1) * M_PI * v / 16.);
 
 					}
@@ -175,8 +174,7 @@ public:
 				for (unsigned x = 0; x < block_sz; x++) {
 					for (unsigned y = 0; y < block_sz; y++) {
 
-						p += (block[x][y] - 128)
-								* cos((2 * x + 1) * M_PI * u / 16.)
+						p += (block[x][y] - 128) * cos((2 * x + 1) * M_PI * u / 16.)
 								* cos((2 * y + 1) * M_PI * v / 16.);
 
 					}
@@ -206,8 +204,7 @@ public:
 					for (unsigned v = 0; v < block_sz; v++) {
 						v == 0 ? cv = 1 / sqrt(2) : cv = 1;
 						//cout<<DCT_img[u][v]<<endl;
-						p += (DCT_img[u][v]) * cv * cu
-								* cos(((2 * x + 1) * M_PI * u) / 16.)
+						p += (DCT_img[u][v]) * cv * cu * cos(((2 * x + 1) * M_PI * u) / 16.)
 								* cos(((2 * y + 1) * M_PI * v) / 16.);
 
 					}
@@ -222,7 +219,8 @@ public:
 	}
 
 	/**
-	 * Retrieve JPEG quantification table
+	 * Retrieve JPEG quantification table depending on quality
+	 * @return JPEG quantification table
 	 */
 
 	int** get_quantification_table() {
@@ -231,8 +229,7 @@ public:
 		double lambda;
 		if (m_quality < 50)
 			lambda = 5000 / m_quality;
-		else
-			lambda = 200 - 2 * m_quality;
+		else lambda = 200 - 2 * m_quality;
 
 		for (unsigned i = 0; i < block_sz; i++) {
 			Q_tab[i] = new int[block_sz];
@@ -242,7 +239,6 @@ public:
 				else if (floor((m_Q[i][j] * lambda + 50) / 100) > 255)
 					Q_tab[i][j] = 255;
 				else {
-					//cout<<floor((m_Q[i][j]*lambda+50)/100)<<endl;
 					Q_tab[i][j] = floor((m_Q[i][j] * lambda + 50) / 100);
 				}
 			}
@@ -294,6 +290,7 @@ public:
 	 * Mean squared deviation
 	 * Measures the average of the squares of the errors, (average loss of data)
 	 * @param block : Pointer to the quantified image to be compared with the original
+	 * @return Mean squared deviation of the block
 	 */
 	double EQM(double **block_dequant, int original_block[][block_sz]) {
 		double EQM;
@@ -336,15 +333,14 @@ public:
 	 * @param mat : Matrix containing the elements
 	 * @param clen : Columns length.
 	 * @param llen : Lignes length.
+	 * @return Number of non null elements
 	 */
 	template<typename T>
-	unsigned non_null_elements(T **mat, unsigned clen = block_sz,
-			unsigned llen = block_sz) {
+	unsigned non_null_elements(T **mat, unsigned clen = block_sz, unsigned llen = block_sz) {
 		unsigned counter = 0;
 		for (unsigned i = 0; i < clen; i++) {
 			for (unsigned j = 0; j < llen; j++) {
-				if (mat[i][j] != 0)
-					counter++;
+				if (mat[i][j] != 0) counter++;
 			}
 		}
 		return counter;
@@ -354,16 +350,14 @@ public:
 	 * Rate of compression between the dequantified image and the original
 	 * @param block : Pointer to the quantified block
 	 * @param original_block : Pointer to the original block
+	 * @return Compression rate of the block
 	 */
-	double compression_rate(double **block_dequant,
-			int original_block[][block_sz]) {
+	double compression_rate(double **block_dequant, int original_block[][block_sz]) {
 		double elems_dequant, elems_orig = 0;
 		for (unsigned i = 0; i < block_sz; i++) {
 			for (unsigned j = 0; j < block_sz; j++) {
-				if (block_dequant[i][j] != 0)
-					elems_dequant++;
-				if (original_block[i][j] != 0)
-					elems_orig++;
+				if (block_dequant[i][j] != 0) elems_dequant++;
+				if (original_block[i][j] != 0) elems_orig++;
 			}
 		}
 		return 1 - elems_dequant / elems_orig;
@@ -388,7 +382,6 @@ public:
 		for (unsigned n = 0; n < 62; n++) {
 			if (img_quant[j][i] == 0) {
 				zeros++;
-				//Should it work ?
 				if (n == 61) {
 					frame[frame_idx++] = 0;
 					frame[frame_idx++] = 0;
@@ -403,14 +396,12 @@ public:
 				if (!sw) {
 					if (i != 0)
 						i -= 1;
-					else
-						sw = !sw;
+					else sw = !sw;
 					j += 1;
 				} else {
 					if (j != 0)
 						j -= 1;
-					else
-						sw = !sw;
+					else sw = !sw;
 					i += 1;
 				}
 			} else {
@@ -452,7 +443,7 @@ public:
 			block_quant[i] = new int[block_sz];
 		}
 
-		unsigned n_blocks = (m_width / block_sz) * (m_height / block_sz);
+
 		int DC = 0;
 
 		cout << "RLE on " << m_height << ", " << m_width << " image." << endl;
@@ -460,8 +451,7 @@ public:
 		// Loop over blocks
 		for (unsigned j = 0; j < m_height; j += block_sz) {
 			for (unsigned i = 0; i < m_width; i += block_sz) {
-				cout << "Image coords : (" << i << ", " << j
-						<< "), Block coords : (" << i / block_sz << ", "
+				cout << "Image coords : (" << i << ", " << j << "), Block coords : (" << i / block_sz << ", "
 						<< j / block_sz << ")" << endl;
 
 				// Loop over block pixels
@@ -473,15 +463,16 @@ public:
 
 				DCT_Block(block_dct, block);
 				quantification(block_dct, block_quant);
-				show2D<int>(block_quant);
+				//show2D<int>(block_quant);
 				RLE_Block(block_quant, DC, temp_frame);
 				DC = temp_frame[0];
 				for (unsigned k = 0; k < MAX_FRAME_SIZE; k++) {
-					frame[MAX_FRAME_SIZE * (j/8*16 + i/8) + k] = temp_frame[k];
+					frame[MAX_FRAME_SIZE * (j / 8 * 16 + i / 8) + k] = temp_frame[k];
 				}
 
 			}
 		}
+		//unsigned n_blocks = (m_width / block_sz) * (m_height / block_sz);
 		//show1D(frame, n_blocks * MAX_FRAME_SIZE);
 	}
 
@@ -490,20 +481,22 @@ public:
 	 * @param mat : 2D array to display
 	 */
 	template<typename T>
+	// Add width & height params
 	void show2D(T **mat) {
 		for (unsigned i = 0; i < block_sz; i++) {
 			for (unsigned j = 0; j < block_sz; j++) {
-				cout << setw(7) << setprecision(3) << mat[i][j] << setw(3)
-						<< '|';
+				cout << setw(7) << setprecision(3) << mat[i][j] << setw(3) << '|';
 			}
 			cout << "\n";
 		}
 	}
 
 	/*
-	 * Print a 1D array
+	 * Print a 1D array of any type
+	 * @param vec : Vector to display
+	 * @param vec : Vector length
 	 */
-	template <typename T>
+	template<typename T>
 	void show1D(T *vect, unsigned len) {
 		for (unsigned i = 0; i < len; i++)
 			cout << setw(4) << vect[i] << "|";

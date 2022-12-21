@@ -2,7 +2,7 @@
  * Huffman.hpp
  *
  *  Created on: 16 nov. 2022
- *      Author: maxime
+ *      Author: Maxime GUY
  */
 
 #ifndef HUFFMAN_HPP_
@@ -61,6 +61,7 @@ class Huffman{
 	unsigned m_len;
 	node * m_head;
 public:
+	// Priority queue set to public to trigger the tree browsing from outside
 	priority_queue<node*, vector<node*>, compare> pq;
 
 	/*
@@ -100,29 +101,31 @@ public:
 	 * @param node : Node to evaluate
 	 * @param str: String used to represent the code
 	 */
-	void printCodes(struct node * root, string str){
+	void print_codes(struct node * root, string str){
 		if (!root) return;
 
 		if (root->s_val != '#')cout << root->s_val << ": " << str << "\n";
-		printCodes(root->s_left, str + "0");
-		printCodes(root->s_right, str + "1");
+		print_codes(root->s_left, str + "0");
+		print_codes(root->s_right, str + "1");
 	}
 
 	/*
-	 * Browse nodes and prints the binary codes of the data elements
+	 * Browse nodes and copy the binary codes of the data elements to the codes[] where values are ordered from index 0 to index data_max-data_min
 	 * @param node : Node to evaluate
+	 * @param codes : Array of codes as char*
+	 * @param data_min : Minimum value of the data
+	 * @param data_max : Maximum value of the data
 	 * @param str: String used to represent the code
 	 */
-	void get_codes(struct node * root, char**codes, int data_len, string str){
+	void get_codes(struct node * root, char**codes, int data_min, int data_max, string str){
 		if (!root) return;
 
 		if (root->s_val != '#'){
-			cout<<"value : "<< root->s_val << ", code : "<< str << ", idx : "<< 158 + root->s_val<<endl;
-			//cout<<"value : "<< root->s_val << ", codes idx : "<<data_len - root->s_val-159<<"/"<<data_len<<endl;
-			strcpy(codes[158 + root->s_val], str.c_str());
+			//cout<<"value : "<< root->s_val << ", code : "<< str << ", idx : "<< -data_min + root->s_val<<endl;
+			strcpy(codes[-data_min + root->s_val], str.c_str());
 		}
-		get_codes(root->s_left,codes,data_len, str + "0");
-		get_codes(root->s_right,codes,data_len, str + "1");
+		get_codes(root->s_left,codes,data_min, data_max, str + "0");
+		get_codes(root->s_right,codes,data_min, data_max, str + "1");
 	}
 };
 
