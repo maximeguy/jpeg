@@ -459,8 +459,6 @@ public:
 
 		// Loop over blocks
 		for (unsigned j = 0; j < m_height; j += block_sz) {
-			//cout<<"j : "<<j<<endl;
-
 			for (unsigned i = 0; i < m_width; i += block_sz) {
 				cout << "Image coords : (" << i << ", " << j
 						<< "), Block coords : (" << i / block_sz << ", "
@@ -468,41 +466,23 @@ public:
 
 				// Loop over block pixels
 				for (unsigned y = j; y < j + block_sz; y++) {
-					//cout<<"Start block line loop : condition = "<<y<<" < "<<j+block_sz<<"?"<<endl;
-					//show1D(m_buffer[y],block_sz);
 					for (unsigned x = i; x < i + block_sz; x++) {
-						//cout<<"Start block column loop : condition = "<<x<<" < "<<i+block_sz<<"?"<<endl;
-						//cout<<"Block["<<y-j<<","<<x-i<<"] = "<<m_buffer[y][x]<<", "<< endl;
 						block[y - j][x - i] = m_buffer[y][x];
 					}
-					//show2D(block);
 				}
 
 				DCT_Block(block_dct, block);
 				quantification(block_dct, block_quant);
-				//show2D<int>(block_quant);
+				show2D<int>(block_quant);
 				RLE_Block(block_quant, DC, temp_frame);
 				DC = temp_frame[0];
-				//DC = sum/(block_sz*block_sz);
-				cout << " j = "<<j/8<<", i = "<<j/8<<", n = "<<j/8*128/8+i/8<<endl;
-				//cout << "Frame global idx = "<< MAX_FRAME_SIZE * (j/8 + i/8)<<", i = "<<i<<", j = "<<j<<endl;
 				for (unsigned k = 0; k < MAX_FRAME_SIZE; k++) {
-					//cout << k << ", "<<temp_frame[k]<<"; ";
-
 					frame[MAX_FRAME_SIZE * (j/8*16 + i/8) + k] = temp_frame[k];
 				}
-				//show1D(frame, n_blocks * MAX_FRAME_SIZE);
-				//cout<<endl;
+
 			}
 		}
-//		for (unsigned i = 0; i<256; i++){
-//			cout<<"Block "<<i<<" : ";
-//			for(unsigned j = 0 ; j<64; j++){
-//				cout<<frame[i*MAX_FRAME_SIZE+j]<<", ";
-//			}
-//			cout<<endl;
-//		}
-		show1D(frame, n_blocks * MAX_FRAME_SIZE);
+		//show1D(frame, n_blocks * MAX_FRAME_SIZE);
 	}
 
 	/*
@@ -523,7 +503,8 @@ public:
 	/*
 	 * Print a 1D array
 	 */
-	void show1D(int *vect, unsigned len) {
+	template <typename T>
+	void show1D(T *vect, unsigned len) {
 		for (unsigned i = 0; i < len; i++)
 			cout << setw(4) << vect[i] << "|";
 		cout << "\n";
